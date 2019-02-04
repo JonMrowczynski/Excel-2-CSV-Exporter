@@ -1,2 +1,4 @@
-
 .idea/workspace.xml
+__pycache__/*
+build/*
+excel_2_csv_converter.spec
