@@ -187,16 +187,19 @@ def convert_excel_to_csv(workbook: Workbook, workbook_name: str, root_directory_
 
 
 def main():
-    directory_or_file_name = get_directory_or_file_name()
-    if directory_or_file_name:
-        workbooks_and_names = load_workbooks(directory_or_file_name)
-        if workbooks_and_names:
-            workbooks, workbook_names = workbooks_and_names
-            if isinstance(workbooks, Workbook):
-                convert_excel_to_csv(*workbooks_and_names)
-            else:
-                for workbook, workbook_name in zip(workbooks, workbook_names):
-                    convert_excel_to_csv(workbook, workbook_name, directory_or_file_name + '_Converted')
+    try:
+        directory_or_file_name = get_directory_or_file_name()
+        if directory_or_file_name:
+            workbooks_and_names = load_workbooks(directory_or_file_name)
+            if workbooks_and_names:
+                workbooks, workbook_names = workbooks_and_names
+                if isinstance(workbooks, Workbook):
+                    convert_excel_to_csv(*workbooks_and_names)
+                else:
+                    for workbook, workbook_name in zip(workbooks, workbook_names):
+                        convert_excel_to_csv(workbook, workbook_name, directory_or_file_name + '_Converted')
+    except Exception as e:
+        print(e)
     input('Press enter to exit...')
 
 
