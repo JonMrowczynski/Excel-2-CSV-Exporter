@@ -1,9 +1,10 @@
 """
-This script allows one to convert an Excel Workbook into .csv files, where each .csv file corresponds to data in one
-worksheet of the Excel Workbook. These .csv files are placed in a directory that has the same name as the name of the
-Excel Workbook and the name of the .csv files are named after their corresponding worksheet.
+This script converts an Excel Workbook into one or more CSVs where each CSV contains the contents of one worksheet of
+the Workbook. These CSVs are placed in a directory with the same name as the Workbook. Each CSV is named
+after the corresponding worksheet.
 """
 
+from csv import writer
 from os import listdir, makedirs
 from os.path import isdir, basename, splitext, dirname, sep, exists
 from typing import Tuple, Union
@@ -12,15 +13,17 @@ from openpyxl import Workbook, load_workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
 
-def _get_directory_or_file_name(names: tuple) -> Union[str, None]:
+def _get_directory_or_workbook_name(names: tuple) -> Union[str, None]:
     """
-    If there is only one name in names, then the name of the Excel Workbook or directory is returned.
+    If there is only one name in names, then the name of the Workbook or directory is returned.
 
-    Else the user is asked which Excel Workbook or directory they would like to choose from.
+    Else the user is asked which Workbook or directory they would like to choose from and their selection is
+    returned.
 
-    :param names: of either the Excel Workbooks or the directories that exist in the current directory.
-    :return: either the name of the only Excel Workbook or directory that exists in the current directory or the name of
-             the Excel Workbook or directory that was chosen by the user or
+    :param names: of either the Workbooks or the directories that exist in the same directory as this script.
+    :return: either the name of the exclusive Workbook or directory that exists in the same directory as this
+             script or the name of the Workbook or directory that was chosen by the user. If names is empty or
+             None, then None is returned.
     """
     if names:
         are_directory_names = isdir(names[0])
@@ -29,39 +32,40 @@ def _get_directory_or_file_name(names: tuple) -> Union[str, None]:
             print('Found', type_singular, names[0])
             return names[0]
         type_plural = 'directories' if are_directory_names else 'Excel ' + Worksheet.__name__ + 's'
-        while True:
-            print('More than one', type_singular, 'was found in the current directory')
-            print('Please choose one of the', type_plural, 'from the list:')
-            for i, name in enumerate(names, 1):
-                print(str(i) + '.', name)
+        choice = 0
+        print('More than one', type_singular, 'was found.')
+        print('Please choose one of the', type_plural, 'from the list or enter -1 to quit:')
+        for i, name in enumerate(names, 1):
+            print(str(i) + '.', name)
+        while choice != -1:
             try:
-                return names[int(input('Choice: ')) - 1]
+                choice = int(input('Choice: '))
+                return names[choice - 1] if choice != -1 else None
             except ValueError or IndexError:
-                print('Please choose one of the available options')
+                print('Please choose one of the available options.')
+    else:
+        print('No directory or', Workbook.__name__, 'to acquire name.')
 
 
-def get_directory_or_file_name() -> Union[str, None]:
+def get_directory_or_workbook_name() -> Union[str, None]:
     """
-     All of the Excel Workbooks and directories in the same directory as this script are located.
+    Locates all of the Workbooks and directories in the same directory as this script.
 
-        If one or more directories have been found and one or more Excel Workbooks have been found, then the user is
-        asked whether they want to convert a single Excel Workbook to CSVs or all of the Excel Workbooks in a directory
-        into CSVs.
+        If one or more directories are found and one or more Workbooks are found, then the user is asked whether
+        they want to convert a single Workbook to CSVs or all of the Workbooks in a directory to CSVs.
 
-        Else, if only one or more Excel Workbooks were found, then the user is asked which Excel Workbook they would
-        like to convert into a CSV.
+        Else if one or more Workbooks are found, then the user is asked which Workbook they would like to
+        convert to CSVs.
 
-        Else, if only one or more directories were found, then the user is asked which directory they would like to
-        convert all of its containing Excel Workbooks into CSVs.
+        Else if only one or more directories were found, then the user is asked which directory they would like to
+        convert all of its containing Workbooks into CSVs.
 
-        Otherwise, an error message is printed.
-
-    :return: Either the name of the Excel Workbook or directory of choice, or None if neither an Excel Workbook or
-             directory was found in the current directory.
+    :return: Either the name of the Workbook or directory of choice, or None if neither an Workbook or
+             directory was found in the same directory as this script.
     """
-    excel_workbook_names = tuple(name for name in listdir('.') if name.endswith('.xlsx'))
+    workbook_names = tuple(name for name in listdir('.') if name.endswith('.xlsx'))
     directory_names = tuple(name for name in listdir('.') if isdir(name))
-    if excel_workbook_names and directory_names:
+    if workbook_names and directory_names:
         choice = '-1'
         while choice != '1' or choice != '2':
             print('Would you like to...')
@@ -69,127 +73,124 @@ def get_directory_or_file_name() -> Union[str, None]:
             print('2. Export all of the Excel', Workbook.__name__ + 's in a directory to CSVs?')
             choice = input('Choice: ')
             if choice == '1':
-                return _get_directory_or_file_name(excel_workbook_names)
+                return _get_directory_or_workbook_name(workbook_names)
             elif choice == '2':
-                return _get_directory_or_file_name(directory_names)
+                return _get_directory_or_workbook_name(directory_names)
             else:
-                print('That was not one of the choices')
-    elif excel_workbook_names:
-        return _get_directory_or_file_name(excel_workbook_names)
+                print('Please select from one of the options')
+    elif workbook_names:
+        return _get_directory_or_workbook_name(workbook_names)
     elif directory_names:
-        return _get_directory_or_file_name(directory_names)
-    print('Could not find any Excel', Workbook.__name__ + 's or directories in the current directory')
-    print('Make sure that the Excel', Workbook.__name__, 'or directory is in the same directory as this script')
+        return _get_directory_or_workbook_name(directory_names)
+    print('Could not find any Excel', Workbook.__name__ + 's or directories in the current directory.')
+    print('Make sure that the Excel', Workbook.__name__, 'or directory is in the same directory as this script.')
 
 
-def _load_workbook(name: str) -> Workbook:
+def _load_workbook(name: str) -> Union[Workbook, None]:
     """
-    This is basically just a wrapper function for openpyxl's load_workbook method. It prints corresponding error
-    messages based on the exception encountered from attempting to load the Excel Workbook with the given name.
+    A wrapper function for openpyxl's load_workbook method. It prints error messages based on the exception encountered
+    from attempting to load the Workbook with the given name.
 
-    :param name: of the Excel Workbook that is to be loaded.
-    :return: the loaded Excel Workbook.
+    :param name: of the Workbook that is to be loaded.
+    :return: the loaded Workbook or None if an exception occurred.
     """
     try:
         return load_workbook(name)
     except FileNotFoundError:
-        print('Could not find Excel ' + Workbook.__name__, '"' + name + '"')
+        print('Could not find Excel ' + Workbook.__name__, '"' + name + '".')
     except PermissionError:
-        print('Could not load ' + Workbook.__name__, '"' + name + '"')
-        print('Make sure that no other program has the', Workbook.__name__, 'open')
+        print('Could not load ' + Workbook.__name__, '"' + name + '".')
+        print('Make sure that no other program has the', Workbook.__name__, 'open.')
 
 
-def load_workbooks(name: str) -> Union[Tuple[Workbook, str], Tuple[Tuple[Workbook, ...], Tuple[str, ...]]]:
+def get_workbooks_and_names(name: str) -> \
+        Union[Tuple[Workbook, str], Tuple[Tuple[Workbook, ...], Tuple[str, ...]], None]:
     """
-    If name is the name of an Excel Workbook, then it is loaded and the loaded Workbook along with the Workbook's
-    corresponding name is returned.
+    If name is the name of an Workbook, then it is loaded and returned along with the Workbook's corresponding
+    name.
 
-    Else if name is the name of a directory, then all of the Excel Workbooks in the directory are loaded and a tuple
+    Else if name is the name of a directory, then all of the Workbooks in the directory are loaded and a tuple
     of tuples is returned, where the zeroth element of the tuple is another tuple of all of the loaded Workbooks, while
-    the first element of the tuple is a parallel tuple that contains all of the names of the Workbooks.
+    the first element of the tuple is a parallel tuple that contains all of the names of those Workbooks.
 
-    :param name: of the Excel Workbook or directory.
-    :return: A tuple of parallel tuples that contains the loaded workbooks along with their names.
+    :param name: of the Workbook or directory.
+    :return: A tuple that contains the Workbook and it name or a tuple of parallel tuples that contains the loaded
+             workbooks along with their names. If name is empty or None, then None is returned.
     """
     if name:
         if name.endswith('.xlsx'):
             workbook = _load_workbook(name)
-            print('Successfully loaded', Workbook.__name__, '"' + name + '"')
+            print('Successfully loaded', Workbook.__name__, '"' + name + '".')
             return workbook, name
         elif isdir(name):
-            print('Loading all', Workbook.__name__ + 's in directory "' + name + '"')
+            print('Loading all', Workbook.__name__ + 's in directory "' + name + '".')
             workbook_names = tuple(name for name in listdir(name) if name.endswith('.xlsx'))
             workbooks = tuple(_load_workbook(name + sep + workbook_name) for workbook_name in workbook_names)
             if workbooks:
-                print('Successfully loaded', Workbook.__name__ + 's in directory "' + name + '"')
+                print('Successfully loaded', Workbook.__name__ + 's in directory "' + name + '".')
             else:
-                print('No', Workbook.__name__ + 's found in directory "' + name + '"')
+                print('No', Workbook.__name__ + 's found in directory "' + name + '".')
             return workbooks, workbook_names
     print('Cannot load a', Workbook.__name__, 'or the', Workbook.__name__ + 's in a directory with no name.')
 
 
-def _get_output_file_relative_path(workbook_name: str, worksheet: Worksheet, root_directory_name: str = None) -> str:
+def _get_output_file_relative_path(workbook_name: str, worksheet: Worksheet, root_dir_name: str = None) -> str:
     """
-    Returns the relative path to the CSV output file which will be located in a directory named after the Workbook and
-    the name of the file will be named after the name given to the Worksheet. In addition, the CSV file will also
-    contain all of the information contained in the Worksheet.
+    Returns the relative path to the CSV, named after the corresponding Worksheet, which will be located in
+    a directory named after the Workbook.
 
-    If a root_directory_name is given, then the converted data is saved in a directory named after root_directory_name.
+    If a root_dir_name is given, then it will be prepended to the relative output path.
 
     :param workbook_name: that will be used to construct the directory name.
-    :param worksheet: that will be used to construct the CSV file data and name.
-    :param root_directory_name: that will contain the converted data if specified.
-    :return: the relative path to the CSV file.
+    :param worksheet: that will be used to construct the CSV and name.
+    :param root_dir_name: that will be prepended to the relative output path if specified.
+    :return: the relative path to the CSV.
     """
     workbook_name = splitext(basename(workbook_name))[0]
-    output_file_relative_path = (root_directory_name + sep if root_directory_name else '') \
-                                + workbook_name + sep + worksheet.title + '.csv'
-    if exists(output_file_relative_path):
-        print('Found', '"' + output_file_relative_path + '"')
+    relative_path = (root_dir_name + sep if root_dir_name else '') + workbook_name + sep + worksheet.title + '.csv'
+    if exists(relative_path):
+        print('Found', '"' + relative_path + '".')
         choice = input('Would you like to overwrite? (y/n): ').lower()
         while choice != 'y' and choice != 'n':
             print('Please enter either "y" or "n"')
             choice = input('Would you like to overwrite? (y/n): ').lower()
-        return output_file_relative_path if choice == 'y' else None
-    elif not exists(dirname(output_file_relative_path)):
-        makedirs(dirname(output_file_relative_path))
-    return output_file_relative_path
+        return relative_path if choice == 'y' else None
+    elif not exists(dirname(relative_path)):
+        makedirs(dirname(relative_path))
+    return relative_path
 
 
-def convert_excel_to_csv(workbook: Workbook, workbook_name: str, root_directory_name: str = None) -> None:
+def convert_excel_to_csv(workbook: Workbook, workbook_name: str, root_dir_name: str = None) -> None:
     """
-    Converts a given Excel Workbook to CSV files by outputting in a directory whose name is the name of the Excel
-    Workbook a CSV file that corresponds to each Worksheet in the Excel Workbook whose file name corresponds to the
-    name of the Worksheet.
+    A directory named after the Workbook is created if it does not exist already. Each Worksheet in the Workbook is
+    converted into a CSV and placed inside that directory. Each CSV is named after the corresponding Worksheet.
 
-    If a root_directory_name is given, then the converted data is saved in a directory named after root_directory_name.
+    If a root_dir_name is given, then it will be prepended to the relative output path.
 
-    :param workbook: that is to be converted to .csv files.
-    :param workbook_name: of the Excel Workbook that is to be converted to CSV files.
-    :param root_directory_name: that will contain the converted data if specified.
+    :param workbook: that is to be converted to CSVs.
+    :param workbook_name: of the Workbook that is to be converted.
+    :param root_dir_name: that will be prepended to the relative output path if specified.
     """
     for worksheet in workbook:
-        output_file_relative_path = _get_output_file_relative_path(workbook_name, worksheet, root_directory_name)
-        if output_file_relative_path:
-            with open(output_file_relative_path, 'w', encoding='utf-8', newline='') as output_file:
-                from csv import writer
+        relative_path = _get_output_file_relative_path(workbook_name, worksheet, root_dir_name)
+        if relative_path:
+            with open(relative_path, 'w', encoding='utf-8', newline='') as output_file:
                 csv_writer = writer(output_file)
                 for row in worksheet:
-                    line = [cell.value for cell in row if cell.value is not None]
-                    csv_writer.writerow(line)
-                if not root_directory_name:
-                    print('Successfully saved converted data to', output_file_relative_path)
+                    csv_writer.writerow([cell.value for cell in row if cell.value is not None])
+                if not root_dir_name:
+                    print('Successfully saved converted data to', '"' + relative_path + '".')
         else:
-            print('No data was written for', Worksheet.__name__, '"' + worksheet.title + '"')
-    if root_directory_name:
-        print('Successfully saved converted data to', '"' + dirname(output_file_relative_path) + '"')
+            print('No data was written for', Worksheet.__name__, '"' + worksheet.title + '".')
+    if root_dir_name:
+        print('Successfully saved converted data to', '"' + dirname(relative_path) + '".')
 
 
 def main():
     try:
-        directory_or_file_name = get_directory_or_file_name()
+        directory_or_file_name = get_directory_or_workbook_name()
         if directory_or_file_name:
-            workbooks_and_names = load_workbooks(directory_or_file_name)
+            workbooks_and_names = get_workbooks_and_names(directory_or_file_name)
             if workbooks_and_names:
                 workbooks, workbook_names = workbooks_and_names
                 if isinstance(workbooks, Workbook):
