@@ -29,9 +29,9 @@ def _get_directory_or_workbook_name(names: tuple) -> Union[str, None]:
         are_directory_names = isdir(names[0])
         type_singular = 'directory' if are_directory_names else 'Excel ' + Workbook.__name__
         if len(names) == 1:
-            print('Found', type_singular, names[0])
+            print('Found', type_singular, '"' + names[0] + '".')
             return names[0]
-        type_plural = 'directories' if are_directory_names else 'Excel ' + Worksheet.__name__ + 's'
+        type_plural = 'directories' if are_directory_names else 'Excel ' + Workbook.__name__ + 's'
         choice = 0
         print('More than one', type_singular, 'was found.')
         print('Please choose one of the', type_plural, 'from the list or enter -1 to quit:')
@@ -171,6 +171,7 @@ def convert_excel_to_csv(workbook: Workbook, workbook_name: str, root_dir_name: 
     :param workbook_name: of the Workbook that is to be converted.
     :param root_dir_name: that will be prepended to the relative output path if specified.
     """
+    relative_path = ''
     for worksheet in workbook:
         relative_path = _get_output_file_relative_path(workbook_name, worksheet, root_dir_name)
         if relative_path:
@@ -182,7 +183,7 @@ def convert_excel_to_csv(workbook: Workbook, workbook_name: str, root_dir_name: 
                     print('Successfully saved converted data to', '"' + relative_path + '".')
         else:
             print('No data was written for', Worksheet.__name__, '"' + worksheet.title + '".')
-    if root_dir_name:
+    if root_dir_name and relative_path:
         print('Successfully saved converted data to', '"' + dirname(relative_path) + '".')
 
 
@@ -197,10 +198,11 @@ def main():
                     convert_excel_to_csv(*workbooks_and_names)
                 else:
                     for workbook, workbook_name in zip(workbooks, workbook_names):
-                        convert_excel_to_csv(workbook, workbook_name, directory_or_file_name + '_Converted')
+                        convert_excel_to_csv(workbook, workbook_name, directory_or_file_name)
+                input('Press enter to exit...')
     except Exception as e:
         print(e)
-    input('Press enter to exit...')
+        input('Press enter to exit...')
 
 
 if __name__ == '__main__':
