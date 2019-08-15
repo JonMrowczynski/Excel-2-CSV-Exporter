@@ -149,7 +149,7 @@ def _get_output_file_relative_path(workbook_name: str, worksheet: Worksheet, roo
     workbook_name = splitext(basename(workbook_name))[0]
     relative_path = (root_dir_name + sep if root_dir_name else '') + workbook_name + sep + worksheet.title + '.csv'
     if exists(relative_path):
-        print('Found', '"' + relative_path + '".')
+        print('Found "' + relative_path + '".')
         choice = input('Would you like to overwrite? (y/n): ').lower()
         while choice != 'y' and choice != 'n':
             print('Please enter either "y" or "n"')
@@ -171,7 +171,6 @@ def convert_excel_to_csv(workbook: Workbook, workbook_name: str, root_dir_name: 
     :param workbook_name: of the Workbook that is to be converted.
     :param root_dir_name: that will be prepended to the relative output path if specified.
     """
-    relative_path = ''
     for worksheet in workbook:
         relative_path = _get_output_file_relative_path(workbook_name, worksheet, root_dir_name)
         if relative_path:
@@ -179,12 +178,10 @@ def convert_excel_to_csv(workbook: Workbook, workbook_name: str, root_dir_name: 
                 csv_writer = writer(output_file)
                 for row in worksheet:
                     csv_writer.writerow([cell.value for cell in row if cell.value is not None])
-                if not root_dir_name:
-                    print('Successfully saved converted data to', '"' + relative_path + '".')
+                if relative_path:
+                    print('Successfully saved converted data to "' + relative_path + '".')
         else:
             print('No data was written for', Worksheet.__name__, '"' + worksheet.title + '".')
-    if root_dir_name and relative_path:
-        print('Successfully saved converted data to', '"' + dirname(relative_path) + '".')
 
 
 def main():
@@ -198,7 +195,7 @@ def main():
                     convert_excel_to_csv(*workbooks_and_names)
                 else:
                     for workbook, workbook_name in zip(workbooks, workbook_names):
-                        convert_excel_to_csv(workbook, workbook_name, directory_or_file_name)
+                        convert_excel_to_csv(workbook, workbook_name, directory_or_file_name + "_Converted")
                 input('Press enter to exit...')
     except Exception as e:
         print(e)
