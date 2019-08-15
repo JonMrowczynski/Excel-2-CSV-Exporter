@@ -1,7 +1,11 @@
 """
-This script converts an Excel Workbook into one or more CSVs where each CSV contains the contents of one worksheet of
-the Workbook. These CSVs are placed in a directory with the same name as the Workbook. Each CSV is named
-after the corresponding worksheet.
+This script converts an Excel Workbook into one or more CSVs where each CSV contains the contents of one Worksheet of
+the Workbook. These CSVs are placed in a directory that is named after the Workbook. Each CSV is named after the
+corresponding Worksheet.
+
+This process can instead be done on a directory that contains multiple Excel Workbooks. For this case, everything is the
+same except that the above process will be carried out on all of the Workbooks and the resulting directories will be
+placed in a directory called root_dir_name.
 """
 
 from csv import writer
@@ -17,13 +21,13 @@ def _get_directory_or_workbook_name(names: tuple) -> Union[str, None]:
     """
     If there is only one name in names, then the name of the Workbook or directory is returned.
 
-    Else the user is asked which Workbook or directory they would like to choose from and their selection is
-    returned.
+    Else the user is asked which Workbook or directory they would like to choose from and the name of that selected
+    Workbook or directory is returned.
 
     :param names: of either the Workbooks or the directories that exist in the same directory as this script.
-    :return: either the name of the exclusive Workbook or directory that exists in the same directory as this
-             script or the name of the Workbook or directory that was chosen by the user. If names is empty or
-             None, then None is returned.
+    :return: either the name of the exclusive Workbook or directory that exists in the same directory as this script or
+             the name of the Workbook or directory that was chosen by the user. If names is empty or None, then None is
+             returned.
     """
     if names:
         are_directory_names = isdir(names[0])
@@ -51,17 +55,17 @@ def get_directory_or_workbook_name() -> Union[str, None]:
     """
     Locates all of the Workbooks and directories in the same directory as this script.
 
-        If one or more directories are found and one or more Workbooks are found, then the user is asked whether
-        they want to convert a single Workbook to CSVs or all of the Workbooks in a directory to CSVs.
+    If one or more directories are found and one or more Workbooks are found, then the user is asked whether they want
+    to convert a single Workbook to CSVs or all of the Workbooks in a directory to CSVs.
 
-        Else if one or more Workbooks are found, then the user is asked which Workbook they would like to
-        convert to CSVs.
+    Else if only one or more Workbooks are found, then the user is asked which Workbook they would like to convert to
+    CSVs.
 
-        Else if only one or more directories were found, then the user is asked which directory they would like to
-        convert all of its containing Workbooks into CSVs.
+    Else if only one or more directories were found, then the user is asked which directory they would like to convert
+    all of its containing Workbooks into CSVs.
 
-    :return: Either the name of the Workbook or directory of choice, or None if neither an Workbook or
-             directory was found in the same directory as this script.
+    :return: Either the name of the Workbook or directory of choice, or None if neither a Workbook or directory was
+             found in the same directory as this script.
     """
     workbook_names = tuple(name for name in listdir('.') if name.endswith('.xlsx'))
     directory_names = tuple(name for name in listdir('.') if isdir(name))
@@ -88,8 +92,8 @@ def get_directory_or_workbook_name() -> Union[str, None]:
 
 def _load_workbook(name: str) -> Union[Workbook, None]:
     """
-    A wrapper function for openpyxl's load_workbook method. It prints error messages based on the exception encountered
-    from attempting to load the Workbook with the given name.
+    A wrapper function for openpyxl's load_workbook method. It potentially prints error messages based on the exception
+    encountered from attempting to load the Workbook with the given name.
 
     :param name: of the Workbook that is to be loaded.
     :return: the loaded Workbook or None if an exception occurred.
@@ -106,16 +110,15 @@ def _load_workbook(name: str) -> Union[Workbook, None]:
 def get_workbooks_and_names(name: str) -> \
         Union[Tuple[Workbook, str], Tuple[Tuple[Workbook, ...], Tuple[str, ...]], None]:
     """
-    If name is the name of an Workbook, then it is loaded and returned along with the Workbook's corresponding
-    name.
+    If name is the name of an Workbook, then it is loaded and returned along with the Workbook's corresponding name.
 
-    Else if name is the name of a directory, then all of the Workbooks in the directory are loaded and a tuple
-    of tuples is returned, where the zeroth element of the tuple is another tuple of all of the loaded Workbooks, while
-    the first element of the tuple is a parallel tuple that contains all of the names of those Workbooks.
+    Else if name is the name of a directory, then all of the Workbooks in the directory are loaded and a tuple of tuples
+    is returned, where the zeroth element of the tuple is another tuple of all of the loaded Workbooks, while the first
+    element of the tuple is a parallel tuple that contains all of the names of those Workbooks.
 
     :param name: of the Workbook or directory.
-    :return: A tuple that contains the Workbook and it name or a tuple of parallel tuples that contains the loaded
-             workbooks along with their names. If name is empty or None, then None is returned.
+    :return: A tuple that contains the Workbook and its name or a tuple of parallel tuples that contains the loaded
+             Workbooks along with their names. If name is empty or None, then None is returned.
     """
     if name:
         if name.endswith('.xlsx'):
@@ -136,13 +139,13 @@ def get_workbooks_and_names(name: str) -> \
 
 def _get_output_file_relative_path(workbook_name: str, worksheet: Worksheet, root_dir_name: str = None) -> str:
     """
-    Returns the relative path to the CSV, named after the corresponding Worksheet, which will be located in
-    a directory named after the Workbook.
+    Returns the relative path to the CSV, named after the corresponding Worksheet, which will be located in a directory
+    named after the Workbook.
 
     If a root_dir_name is given, then it will be prepended to the relative output path.
 
     :param workbook_name: that will be used to construct the directory name.
-    :param worksheet: that will be used to construct the CSV and name.
+    :param worksheet: whose data will be contained in a CSV whose name is the same name as the Worksheet's.
     :param root_dir_name: that will be prepended to the relative output path if specified.
     :return: the relative path to the CSV.
     """
@@ -163,7 +166,8 @@ def _get_output_file_relative_path(workbook_name: str, worksheet: Worksheet, roo
 def convert_excel_to_csv(workbook: Workbook, workbook_name: str, root_dir_name: str = None) -> None:
     """
     A directory named after the Workbook is created if it does not exist already. Each Worksheet in the Workbook is
-    converted into a CSV and placed inside that directory. Each CSV is named after the corresponding Worksheet.
+    converted into a CSV and placed inside that directory. Each CSV is given the same name as the corresponding
+    Worksheet.
 
     If a root_dir_name is given, then it will be prepended to the relative output path.
 
