@@ -13,7 +13,7 @@ Currently there is only a Windows executable, but executables for other platform
 
 ## How 2 Develop?
 You will need:
-- PyCharm 2019.2 (recommended although not necessary). 
+- PyCharm 2019.2 or later (recommended, but not necessary). 
 - Python 3.7.4 or later.
 - [openpyxl](https://openpyxl.readthedocs.io/en/stable/) 2.6.2 or later to read Excel Workbooks.
 - [PyInstaller](https://pyinstaller.readthedocs.io/en/stable/) 3.5 or later to build executable.
