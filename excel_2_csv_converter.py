@@ -1,5 +1,5 @@
 """
-Copyright (c) 2019 Jon Mrowczynski
+Copyright (c) 2018-2019 Jon Mrowczynski
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
