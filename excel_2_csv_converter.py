@@ -20,7 +20,7 @@ corresponding Worksheet.
 
 This process can instead be done on a directory that contains multiple Excel Workbooks. For this case, everything is the
 same except that the above process will be carried out on all of the Workbooks and the resulting directories will be
-placed in a directory called root_dir_name.
+placed in a directory called "Exports".
 """
 
 from argparse import ArgumentParser
