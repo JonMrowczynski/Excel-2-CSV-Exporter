@@ -1,5 +1,5 @@
 """
-Copyright (c) 2018-2019 Jon Mrowczynski
+Copyright (c) 2018-2022 Jon Mrowczynski
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -53,12 +53,12 @@ def _get_directory_or_workbook_name(names: tuple) -> Union[str, None]:
         are_directory_names = isdir(names[0])
         type_singular = 'directory' if are_directory_names else 'Excel ' + Workbook.__name__
         if len(names) == 1:
-            print('Found', type_singular, '"' + names[0] + '".')
+            print(f'Found {type_singular} "{names[0]}".')
             return names[0]
         type_plural = 'directories' if are_directory_names else 'Excel ' + Workbook.__name__ + 's'
         choice = 0
-        print('More than one', type_singular, 'was found.')
-        print('Please choose one of the', type_plural, 'from the list or enter -1 to quit:')
+        print(f'More than one {type_singular} was found.')
+        print(f'Please choose one of the {type_plural} from the list or enter -1 to quit:')
         for i, name in enumerate(names, 1):
             print(str(i) + '.', name)
         while choice != -1:
@@ -68,12 +68,12 @@ def _get_directory_or_workbook_name(names: tuple) -> Union[str, None]:
             except ValueError or IndexError:
                 print('Please choose one of the available options.')
     else:
-        print('No directory or', Workbook.__name__, 'to acquire name.')
+        print(f'No directory or {Workbook.__name__} to acquire name.')
 
 
 def get_directory_or_workbook_name() -> Union[str, None]:
     """
-    Locates all of the Workbooks and directories in the same directory as this script.
+    Locates all the Workbooks and directories in the same directory as this script.
 
     If one or more directories are found and one or more Workbooks are found, then the user is asked whether they want
     to convert a single Workbook to CSVs or all of the Workbooks in a directory to CSVs.
@@ -84,7 +84,7 @@ def get_directory_or_workbook_name() -> Union[str, None]:
     Else if only one or more directories were found, then the user is asked which directory they would like to convert
     all of its containing Workbooks into CSVs.
 
-    :return: Either the name of the Workbook or directory of choice, or None if neither a Workbook or directory was
+    :return: Either the name of the Workbook or directory of choice, or None if neither a Workbook nor directory was
              found in the same directory as this script.
     """
     workbook_names = tuple(name for name in listdir('.') if name.endswith('.xlsx'))
@@ -93,8 +93,8 @@ def get_directory_or_workbook_name() -> Union[str, None]:
         choice = '-1'
         while choice != '1' or choice != '2':
             print('Would you like to...')
-            print('1. Export an Excel', Workbook.__name__, 'to CSVs?')
-            print('2. Export all of the Excel', Workbook.__name__ + 's in a directory to CSVs?')
+            print(f'1. Export an Excel {Workbook.__name__} to CSVs?')
+            print(f"2. Export all of the Excel {Workbook.__name__}'s in a directory to CSVs?")
             choice = input('Choice: ')
             if choice == '1':
                 return _get_directory_or_workbook_name(workbook_names)
@@ -106,8 +106,8 @@ def get_directory_or_workbook_name() -> Union[str, None]:
         return _get_directory_or_workbook_name(workbook_names)
     elif directory_names:
         return _get_directory_or_workbook_name(directory_names)
-    print('Could not find any Excel', Workbook.__name__ + 's or directories in the current directory.')
-    print('Make sure that the Excel', Workbook.__name__, 'or directory is in the same directory as this script.')
+    print(f"Could not find any Excel {Workbook.__name__}'s or directories in the current directory.")
+    print(f'Make sure that the Excel {Workbook.__name__} or directory is in the same directory as this script.')
 
 
 def _load_workbook(name: str) -> Union[Workbook, None]:
@@ -121,20 +121,20 @@ def _load_workbook(name: str) -> Union[Workbook, None]:
     try:
         return load_workbook(name)
     except FileNotFoundError:
-        print('Could not find Excel ' + Workbook.__name__, '"' + name + '".')
+        print(f'Could not find Excel {Workbook.__name__} "{name}".')
     except PermissionError:
-        print('Could not load ' + Workbook.__name__, '"' + name + '".')
-        print('Make sure that no other program has the', Workbook.__name__, 'open.')
+        print(f'Could not load {Workbook.__name__} "{name}".')
+        print(f'Make sure that no other program has the {Workbook.__name__} open and then try again.')
 
 
 def get_workbooks_and_names(name: str) -> \
         Union[Tuple[Workbook, str], Tuple[Tuple[Workbook, ...], Tuple[str, ...]], None]:
     """
-    If name is the name of an Workbook, then it is loaded and returned along with the Workbook's corresponding name.
+    If name is the name of a Workbook, then it is loaded and returned along with the Workbook's corresponding name.
 
-    Else if name is the name of a directory, then all of the Workbooks in the directory are loaded and a tuple of tuples
-    is returned, where the zeroth element of the tuple is another tuple of all of the loaded Workbooks, while the first
-    element of the tuple is a parallel tuple that contains all of the names of those Workbooks.
+    Else if name is the name of a directory, then all the Workbooks in the directory are loaded and a tuple of tuples
+    is returned, where the zeroth element of the tuple is another tuple of all the loaded Workbooks, while the first
+    element of the tuple is a parallel tuple that contains all the names of those Workbooks.
 
     :param name: of the Workbook or directory.
     :return: A tuple that contains the Workbook and its name or a tuple of parallel tuples that contains the loaded
@@ -143,18 +143,18 @@ def get_workbooks_and_names(name: str) -> \
     if name:
         if name.endswith('.xlsx'):
             workbook = _load_workbook(name)
-            print('Successfully loaded', Workbook.__name__, '"' + name + '".')
+            print(f'Successfully loaded {Workbook.__name__} "{name}".')
             return workbook, name
         elif isdir(name):
-            print('Loading all', Workbook.__name__ + 's in directory "' + name + '".')
+            print(f"Loading all {Workbook.__name__}'s in directory \"{name}\".")
             workbook_names = tuple(name for name in listdir(name) if name.endswith('.xlsx'))
             workbooks = tuple(_load_workbook(name + sep + workbook_name) for workbook_name in workbook_names)
             if workbooks:
-                print('Successfully loaded', Workbook.__name__ + 's in directory "' + name + '".')
+                print(f"Successfully loaded {Workbook.__name__}'s in directory \"{name}\".")
             else:
-                print('No', Workbook.__name__ + 's found in directory "' + name + '".')
+                print(f"No {Workbook.__name__}'s found in directory \"{name}\".")
             return workbooks, workbook_names
-    print('Cannot load a', Workbook.__name__, 'or the', Workbook.__name__ + 's in a directory with no name.')
+    print(f"Cannot load {Workbook.__name__} or the {Workbook.__name__} in a directory with no name.")
 
 
 def _get_output_file_relative_path(workbook_name: str, worksheet: Worksheet, root_dir_name: str = None) -> str:
@@ -172,7 +172,7 @@ def _get_output_file_relative_path(workbook_name: str, worksheet: Worksheet, roo
     workbook_name = splitext(basename(workbook_name))[0]
     relative_path = (root_dir_name + sep if root_dir_name else '') + workbook_name + sep + worksheet.title + '.csv'
     if exists(relative_path):
-        print('Found "' + relative_path + '".')
+        print(f'Found "{relative_path}".')
         choice = input('Would you like to overwrite? (y/n): ').lower()
         while choice != 'y' and choice != 'n':
             print('Please enter either "y" or "n"')
@@ -203,9 +203,9 @@ def convert_excel_to_csv(workbook: Workbook, workbook_name: str, root_dir_name: 
                 for row in worksheet:
                     csv_writer.writerow([cell.value for cell in row if cell.value is not None])
                 if relative_path:
-                    print('Successfully saved converted data to "' + relative_path + '".')
+                    print(f'Successfully saved converted data to "{relative_path}".')
         else:
-            print('No data was written for', Worksheet.__name__, '"' + worksheet.title + '".')
+            print(f'No data was written for {Worksheet.__name__} "{worksheet.title}".')
 
 
 def main():
