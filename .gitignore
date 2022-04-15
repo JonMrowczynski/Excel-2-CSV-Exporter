@@ -3,3 +3,6 @@ __pycache__/*
 build/*
 excel_2_csv_converter.spec
 .idea/dictionaries/sleep.xml
+/Exports/
+/build/
+/venv/
