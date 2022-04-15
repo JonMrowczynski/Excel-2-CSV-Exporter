@@ -6,3 +6,4 @@ excel_2_csv_converter.spec
 /Exports/
 /build/
 /venv/
+/dist/
