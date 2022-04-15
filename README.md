@@ -32,7 +32,7 @@ You will need:
 
 - [PyCharm IDE](https://www.jetbrains.com/pycharm/download/) >= 2022.1 (recommended, but not necessary).
 
-- [Python](https://www.python.org/downloads/) >= 3.9.
+- [Python](https://www.python.org/downloads/) >= 3.10.
 
 - [openpyxl](https://openpyxl.readthedocs.io/en/stable/) >= 3.0.9 to read Excel Workbooks.
 
