@@ -37,3 +37,4 @@ You will need:
 - [openpyxl](https://openpyxl.readthedocs.io/en/stable/) >= 3.0.9 to read Excel Workbooks.
 
 - [PyInstaller](https://pyinstaller.readthedocs.io/en/stable/) >= 4.10 to build executable.
+  - [UPX](https://upx.github.io/) >= 3.96 if you would like to make smaller executables.

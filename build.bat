@@ -1,3 +1,4 @@
 @echo off
 title excel_2_csv_converter build script
-python -O -m PyInstaller --onefile excel_2_csv_converter.py
+del /Q build, dist
+python -O -m PyInstaller --clean --onefile excel_2_csv_converter.py
