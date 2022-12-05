@@ -29,6 +29,7 @@ from os import listdir
 from os.path import basename, isdir, join, splitext
 from pathlib import Path
 from typing import Final
+from tqdm import tqdm
 
 from openpyxl import load_workbook, Workbook
 from openpyxl.worksheet.worksheet import Worksheet
@@ -117,11 +118,13 @@ def _remove_empty_rows(ws: Worksheet) -> Worksheet:
     :return: the cleaned up Worksheet
     """
     r = 1  # Excel starts indexing at 1.
-    while r <= ws.max_row:
-        if not any(cell.value for cell in ws[r]):
-            ws.delete_rows(r)
-        else:
-            r += 1
+    with tqdm(desc='Deleting empty rows', total=ws.max_row, position=0) as pbar:
+        while r <= ws.max_row:
+            if not any(cell.value for cell in ws[r]):
+                ws.delete_rows(r)
+            else:
+                r += 1
+            pbar.update()
     return ws
 
 
@@ -133,11 +136,13 @@ def _remove_empty_columns(ws: Worksheet) -> Worksheet:
     :return: the cleaned up Worksheet.
     """
     c = 1  # Excel starts indexing at 1.
-    while c <= ws.max_column:
-        if not any(row[0].value for row in ws.iter_rows(min_col=c, max_col=c)):
-            ws.delete_cols(c)
-        else:
-            c += 1
+    with tqdm(desc='Deleting empty columns', total=ws.max_column, position=0) as pbar:
+        while c <= ws.max_column:
+            if not any(row[0].value for row in ws.iter_rows(min_col=c, max_col=c)):
+                ws.delete_cols(c)
+            else:
+                c += 1
+            pbar.update()
     return ws
 
 
@@ -159,7 +164,7 @@ def _workbooks2csv(workbooks: dict) -> None:
                 print(f'No data was written for {Worksheet.__name__} "{ws.title}".')
                 continue
             with open(path2export, 'w', encoding='utf-8', newline='') as output_file:
-                ws = _remove_empty_columns(_remove_empty_rows(ws))
+                ws = _remove_empty_rows(_remove_empty_columns(ws))
                 writer(output_file).writerows([[cell.value for cell in row] for row in ws])
                 print(f'Successfully saved converted data to "{path2export}".')
     print(f'Converted {Workbook.__name__}s to CSVs!')
