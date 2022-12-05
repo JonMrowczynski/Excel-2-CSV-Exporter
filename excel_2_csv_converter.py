@@ -47,13 +47,13 @@ def _load_workbook(workbook_path: str) -> dict[str: Workbook]:
     :return: a singleton dictionary containing the name of the Workbook as the key and the Workbook as the value.
     """
     try:
-        return {splitext(basename(workbook_path))[0]: load_workbook(workbook_path, read_only=True)}
+        return {splitext(basename(workbook_path))[0]: load_workbook(workbook_path, data_only=True)}
     except FileNotFoundError or PermissionError as e:
         problem_word = 'find' if isinstance(e, FileNotFoundError) else 'load'
         print(f'Could not {problem_word} {Workbook.__name__} "{workbook_path}".')
 
 
-def _loads_workbooks(dir_path: str) -> dict[str: Workbook]:
+def _load_workbooks(dir_path: str) -> dict[str: Workbook]:
     """
     Loads all the Workbooks in the given path and returns a dictionary that maps the name of the Workbook to the
     corresponding loaded Workbook.
@@ -82,7 +82,7 @@ def _get_input_source(path: str) -> dict:
         return _load_workbook(path)
     elif isdir(path):
         print(f'Found input source "{path}".')
-        workbooks_map = _loads_workbooks(path)
+        workbooks_map = _load_workbooks(path)
         if not workbooks_map:
             print(f'No {Workbook.__name__}s found in "{path}".')
         return workbooks_map
@@ -109,6 +109,38 @@ def _should_write_data(export_path: Path) -> bool:
     return True
 
 
+def _remove_empty_rows(ws: Worksheet) -> Worksheet:
+    """
+    Removes all the rows in the given Worksheet that do not contain any data and returns this cleaned up Worksheet.
+
+    :param ws: the Worksheet whose empty rows of data are to be deleted.
+    :return: the cleaned up Worksheet
+    """
+    r = 1  # Excel starts indexing at 1.
+    while r <= ws.max_row:
+        if not any(cell.value for cell in ws[r]):
+            ws.delete_rows(r)
+        else:
+            r += 1
+    return ws
+
+
+def _remove_empty_columns(ws: Worksheet) -> Worksheet:
+    """
+    Removes all the columns in the given Worksheet that do not contain any data and returns this cleaned up Worksheet.
+
+    :param ws: the Worksheet whose empty columns of data are to be deleted.
+    :return: the cleaned up Worksheet.
+    """
+    c = 1  # Excel starts indexing at 1.
+    while c <= ws.max_column:
+        if not any(row[0].value for row in ws.iter_rows(min_col=c, max_col=c)):
+            ws.delete_cols(c)
+        else:
+            c += 1
+    return ws
+
+
 def _workbooks2csv(workbooks: dict) -> None:
     """
     Converts all the Worksheets in all the Workbooks into CSVs. One directory will be named after each Workbook and will
@@ -123,12 +155,12 @@ def _workbooks2csv(workbooks: dict) -> None:
         path2workbook_export.mkdir(parents=True, exist_ok=True)
         for ws in wb:
             path2export = Path(join(str(path2workbook_export), ws.title + '.csv'))
-            should_write_data = _should_write_data(path2export)
-            if not should_write_data:
+            if not _should_write_data(path2export):
                 print(f'No data was written for {Worksheet.__name__} "{ws.title}".')
                 continue
             with open(path2export, 'w', encoding='utf-8', newline='') as output_file:
-                writer(output_file).writerows(cell_vals for row in ws if any(cell_vals := [cell.value for cell in row]))
+                ws = _remove_empty_columns(_remove_empty_rows(ws))
+                writer(output_file).writerows([[cell.value for cell in row] for row in ws])
                 print(f'Successfully saved converted data to "{path2export}".')
     print(f'Converted {Workbook.__name__}s to CSVs!')
 
