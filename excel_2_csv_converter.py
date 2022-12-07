@@ -168,6 +168,12 @@ def _workbooks2csv(workbooks_map: dict[Path, Workbook], input_path: Path, output
 
 
 def parse_arguments() -> tuple[Path, Path]:
+    """
+    Parses the input_path and output_path command line arguments. The output_path parameter is not required unlike
+    the input_path. If no output_path is specified, then EXPORT_ROOT_DIR is used as the output_path.
+
+    :return: the input and output paths in that order.
+    """
     parser = ArgumentParser()
     parser.add_argument('-input_path', type=str, required=True,
                         help=f'The path to the {Workbook.__name__} or to a directory containing {Workbook.__name__}s.')
