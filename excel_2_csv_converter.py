@@ -25,7 +25,7 @@ placed in a directory called "Exports".
 
 from argparse import ArgumentParser
 from csv import writer
-from os.path import isdir, join
+from os.path import isdir
 from pathlib import Path
 from typing import Final
 
@@ -33,22 +33,22 @@ from openpyxl import load_workbook, Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 from tqdm import tqdm
 
-WORKBOOK_EXTENSION: Final = '.xlsx'
+WORKBOOK_EXTENSION: Final = 'xlsx'
 EXPORT_ROOT_DIR: Final = 'Exports'
 
 
-def _load_workbook(workbook_path: Path) -> dict[Path: Workbook]:
+def _load_workbook(workbook_path: Path) -> Workbook:
     """
-    Loads the Workbook at the given path. If there does not exist a Workbook at the given path,
+    Returns the loaded Workbook at the given path. If there does not exist a Workbook at the given path,
     then a FileNoteFoundError is raised. If the Workbook is open in another program, then a PermissionError is raised
     since only one program can exclusively access an Excel Workbook. Only the data is loaded from each of the
     Workbooks so that the values that are returned by formulas are exported instead of the actual formula.
 
     :param workbook_path: a relative or absolute path to a Workbook.
-    :return: a singleton dictionary containing the path to the Workbook as the key and the loaded Workbook as the value.
+    :return: the loaded Workbook.
     """
     try:
-        return {workbook_path: load_workbook(workbook_path, data_only=True)}
+        return load_workbook(workbook_path, data_only=True)
     except FileNotFoundError or PermissionError as e:
         problem_word = 'find' if isinstance(e, FileNotFoundError) else 'load'
         print(f'Could not {problem_word} {Workbook.__name__} "{workbook_path}".')
@@ -75,10 +75,10 @@ def _get_workbooks_map(input_path: Path) -> dict[Path, Workbook]:
     :return: a dictionary mapping Path(s) to Workbook(s) to the corresponding loaded Workbook(s).
     """
     if str(input_path).endswith(WORKBOOK_EXTENSION):
-        print(f'Found input source "{input_path}".')
-        return _load_workbook(input_path)
+        print(f'Found input {Workbook.__name__} "{input_path}".')
+        return {input_path: _load_workbook(input_path)}
     if isdir(input_path):
-        print(f'Found input source "{input_path}".')
+        print(f'Found input directory "{input_path}".')
         workbooks_map = _load_workbooks(input_path)
         if not workbooks_map:
             print(f'No {Workbook.__name__}s found in "{input_path}".')
@@ -141,20 +141,22 @@ def _remove_empty_columns(ws: Worksheet) -> Worksheet:
     return ws
 
 
-def _workbooks2csv(workbooks: dict) -> None:
+def _workbooks2csv(workbooks_map: dict[Path, Workbook], input_path: Path, output_path: Path) -> None:
     """
     Converts all the Worksheets in all the Workbooks into CSVs. One directory will be named after each Workbook and will
     contain all the data in the Workbook. Each CSV file will be named after each Worksheet and will contain the data
     present in the Worksheet.
 
-    :param workbooks: a map whose keys are the names of the Workbooks and the values are the corresponding Workbooks.
+    :param workbooks_map: maps Paths to Workbooks to their corresponding loaded Workbooks.
+    :param input_path: the input Path that is a Workbook or is a directory containing Workbooks.
     """
     print(f'Converting {Workbook.__name__}s to CSVs...')
-    for workbook_name, wb in workbooks.items():
-        path2workbook_export = Path(EXPORT_ROOT_DIR, workbook_name)
-        path2workbook_export.mkdir(parents=True, exist_ok=True)
+    for workbook_path, wb in workbooks_map.items():
+        relative_workbook_path_without_extension = str(workbook_path.relative_to(input_path)).rpartition('.')[0]
+        workbook_export_path = Path(output_path, relative_workbook_path_without_extension)
+        workbook_export_path.mkdir(parents=True, exist_ok=True)
         for ws in wb:
-            path2export = Path(join(str(path2workbook_export), ws.title + '.csv'))
+            path2export = Path(workbook_export_path, ws.title + '.csv')
             if not _should_write_data(path2export):
                 print(f'No data was written for {Worksheet.__name__} "{ws.title}".')
                 continue
@@ -165,13 +167,28 @@ def _workbooks2csv(workbooks: dict) -> None:
     print(f'Converted {Workbook.__name__}s to CSVs!')
 
 
-def main():
+def parse_arguments() -> tuple[Path, Path]:
     parser = ArgumentParser()
-    parser.add_argument('-path', type=str, required=True, help=f'The name of the {Workbook.__name__} or a path to '
-                                                               f'the directory containing {Workbook.__name__}s.')
-    input_source = _get_workbooks_map(parser.parse_args().path)
-    if input_source:
-        _workbooks2csv(input_source)
+    parser.add_argument('-input_path', type=str, required=True,
+                        help=f'The path to the {Workbook.__name__} or to a directory containing {Workbook.__name__}s.')
+    parser.add_argument('-output_path', type=str, required=False, default=EXPORT_ROOT_DIR, help='The path to the '
+                                                                                                'directory that will '
+                                                                                                'contain all the '
+                                                                                                'exported CSV files.')
+    args = parser.parse_args()
+    input_path = Path(args.input_path)
+    output_path = Path(args.output_path if args.output_path else EXPORT_ROOT_DIR)
+    return input_path, output_path
+
+
+def main():
+    input_path, output_path = parse_arguments()
+    if input_path == output_path:
+        print('The input_path must be different than the output_path.')
+    else:
+        workbooks_map = _get_workbooks_map(input_path)
+        if workbooks_map:
+            _workbooks2csv(workbooks_map, input_path, output_path)
 
 
 if __name__ == '__main__':
