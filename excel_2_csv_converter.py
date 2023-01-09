@@ -24,19 +24,16 @@ placed in a directory called "Exports".
 """
 
 from argparse import ArgumentParser
-from csv import writer
 from pathlib import Path
 from typing import Final
 
-from openpyxl import load_workbook, Workbook
-from openpyxl.worksheet.worksheet import Worksheet
-from tqdm import tqdm
+from pandas import ExcelFile, read_excel
 
 WORKBOOK_EXTENSION: Final = 'xlsx'
 EXPORT_ROOT_DIR: Final = 'Exports'
 
 
-def _load_workbook(workbook_path: Path) -> Workbook:
+def _load_workbook(workbook_path: Path) -> ExcelFile:
     """
     Returns the loaded Workbook at the given path. If there does not exist a Workbook at the given path,
     then a FileNoteFoundError is raised. If the Workbook is open in another program, then a PermissionError is raised
@@ -47,13 +44,13 @@ def _load_workbook(workbook_path: Path) -> Workbook:
     :return: the loaded Workbook.
     """
     try:
-        return load_workbook(workbook_path, data_only=True)
+        return ExcelFile(workbook_path)
     except FileNotFoundError or PermissionError as e:
         problem_word = 'find' if isinstance(e, FileNotFoundError) else 'load'
-        print(f'Could not {problem_word} {Workbook.__name__} "{workbook_path}".')
+        print(f'Could not {problem_word} Excel file "{workbook_path}".')
 
 
-def _load_workbooks(root_dir_path: Path) -> dict[str: Workbook]:
+def _load_workbooks(root_dir_path: Path) -> dict[str: ExcelFile]:
     """
     Recursively scans for all Workbooks that can be found at the given root directory and loads them into a
     dictionary where the path to the Workbook is mapped to the loaded Workbook.
@@ -64,7 +61,7 @@ def _load_workbooks(root_dir_path: Path) -> dict[str: Workbook]:
     return {path: _load_workbook(path) for path in root_dir_path.rglob('*.' + WORKBOOK_EXTENSION)}
 
 
-def _get_workbooks_map(input_path: Path) -> dict[Path, Workbook]:
+def _get_workbooks_map(input_path: Path) -> dict[Path, ExcelFile]:
     """
     Returns either a singleton dictionary if a path to a Workbook is given, a dictionary with multiple entries if a
     directory of Workbooks is given, or an empty dictionary if the given path is not valid or there are no Workbooks in
@@ -74,15 +71,15 @@ def _get_workbooks_map(input_path: Path) -> dict[Path, Workbook]:
     :return: a dictionary mapping Path(s) to Workbook(s) to the corresponding loaded Workbook(s).
     """
     if str(input_path).endswith(WORKBOOK_EXTENSION):
-        print(f'Found input {Workbook.__name__} "{input_path}".')
+        print(f'Found input Excel file "{input_path}".')
         return {input_path: _load_workbook(input_path)}
     if input_path.is_dir():
         print(f'Found input directory "{input_path}".')
         workbooks_map = _load_workbooks(input_path)
         if not workbooks_map:
-            print(f'No {Workbook.__name__}s found in "{input_path}".')
+            print(f'No Excel files found in "{input_path}".')
         return workbooks_map
-    print(f'"{input_path}" is not a valid {Workbook.__name__} or directory.')
+    print(f'"{input_path}" is not a valid Excel file or directory.')
     return dict()
 
 
@@ -104,36 +101,7 @@ def _should_write_data(export_path: Path) -> bool:
     return True
 
 
-def _remove_empty_rows(ws: Worksheet) -> list[list]:
-    """
-    Removes all the rows in the given Worksheet that do not contain any data and returns this cleaned up Worksheet.
-
-    :param ws: the Worksheet whose empty rows of data are to be deleted.
-    :return: the cleaned up Worksheet
-    """
-    return [cell_values for row in tqdm(ws, desc='Deleting empty rows', position=0)
-            if any(cell_values := [cell.value for cell in row])]
-
-
-def _remove_empty_columns(ws: Worksheet) -> Worksheet:
-    """
-    Removes all the columns in the given Worksheet that do not contain any data and returns this cleaned up Worksheet.
-
-    :param ws: the Worksheet whose empty columns of data are to be deleted.
-    :return: the cleaned up Worksheet.
-    """
-    c = 1  # Excel starts indexing at 1.
-    with tqdm(desc='Deleting empty columns', total=ws.max_column, position=0) as pbar:
-        while c <= ws.max_column:
-            if not any(row[0].value for row in ws.iter_rows(min_col=c, max_col=c)):
-                ws.delete_cols(c)
-            else:
-                c += 1
-            pbar.update()
-    return ws
-
-
-def _workbooks2csv(workbooks_map: dict[Path, Workbook], input_path: Path, output_path: Path) -> None:
+def _workbooks2csv(workbooks_map: dict[Path, ExcelFile], input_path: Path, output_path: Path) -> None:
     """
     Converts all the Worksheets in all the Workbooks into CSVs. One directory will be named after each Workbook and will
     contain all the data in the Workbook. Each CSV file will be named after each Worksheet and will contain the data
@@ -142,21 +110,21 @@ def _workbooks2csv(workbooks_map: dict[Path, Workbook], input_path: Path, output
     :param workbooks_map: maps Paths to Workbooks to their corresponding loaded Workbooks.
     :param input_path: the input Path that is a Workbook or is a directory containing Workbooks.
     """
-    print(f'Converting {Workbook.__name__}s to CSVs...')
-    for workbook_path, wb in workbooks_map.items():
+    print(f'Converting Excel files to CSVs...')
+    for workbook_path, excelFile in workbooks_map.items():
         relative_workbook_path_without_extension = str(workbook_path.relative_to(input_path)).rpartition('.')[0]
         workbook_export_path = Path(output_path, relative_workbook_path_without_extension)
         workbook_export_path.mkdir(parents=True, exist_ok=True)
-        for ws in wb:
-            path2export = Path(workbook_export_path, ws.title.strip() + '.csv')
+        for title, worksheet_df in read_excel(excelFile, None).items():
+            path2export = Path(workbook_export_path, title.strip() + '.csv')
             if not _should_write_data(path2export):
-                print(f'No data was written for {Worksheet.__name__} "{ws.title.strip()}".')
+                print(f'No data was written for worksheet "{title.strip()}".')
                 continue
-            with open(path2export, 'w', encoding='utf-8', newline='') as output_file:
-                rows = _remove_empty_rows(_remove_empty_columns(ws))
-                writer(output_file).writerows([[cell_value for cell_value in row] for row in rows])
-                print(f'Successfully saved converted data to "{path2export}".')
-    print(f'Converted {Workbook.__name__}s to CSVs!')
+            worksheet_df.dropna(axis=0, how='all', inplace=True)  # Remove empty rows
+            worksheet_df.dropna(axis=1, how='all', inplace=True)  # Removes empty columns
+            worksheet_df.to_csv(path2export, index=False)  # Save the cleaned worksheet to a CSV file.
+            print(f'Successfully saved converted data to "{path2export}".')
+    print(f'Converted Excel files to CSVs!')
 
 
 def parse_arguments() -> tuple[Path, Path]:
@@ -168,7 +136,7 @@ def parse_arguments() -> tuple[Path, Path]:
     """
     parser = ArgumentParser()
     parser.add_argument('--input_path', type=str, required=True,
-                        help=f'The path to the {Workbook.__name__} or to a directory containing {Workbook.__name__}s.')
+                        help=f'The path to the Excel file or to a directory containing Excel files.')
     parser.add_argument('--output_path', type=str, required=False, default=EXPORT_ROOT_DIR, help='The path to the '
                                                                                                  'directory that will '
                                                                                                  'contain all the '
