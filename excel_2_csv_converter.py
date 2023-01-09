@@ -104,22 +104,15 @@ def _should_write_data(export_path: Path) -> bool:
     return True
 
 
-def _remove_empty_rows(ws: Worksheet) -> Worksheet:
+def _remove_empty_rows(ws: Worksheet) -> list[list]:
     """
     Removes all the rows in the given Worksheet that do not contain any data and returns this cleaned up Worksheet.
 
     :param ws: the Worksheet whose empty rows of data are to be deleted.
     :return: the cleaned up Worksheet
     """
-    r = 1  # Excel starts indexing at 1.
-    with tqdm(desc='Deleting empty rows', total=ws.max_row, position=0) as pbar:
-        while r <= ws.max_row:
-            if not any(cell.value for cell in ws[r]):
-                ws.delete_rows(r)
-            else:
-                r += 1
-            pbar.update()
-    return ws
+    return [cell_values for row in tqdm(ws, desc='Deleting empty rows', position=0)
+            if any(cell_values := [cell.value for cell in row])]
 
 
 def _remove_empty_columns(ws: Worksheet) -> Worksheet:
@@ -160,8 +153,8 @@ def _workbooks2csv(workbooks_map: dict[Path, Workbook], input_path: Path, output
                 print(f'No data was written for {Worksheet.__name__} "{ws.title}".')
                 continue
             with open(path2export, 'w', encoding='utf-8', newline='') as output_file:
-                ws = _remove_empty_rows(_remove_empty_columns(ws))
-                writer(output_file).writerows([[cell.value for cell in row] for row in ws])
+                rows = _remove_empty_rows(_remove_empty_columns(ws))
+                writer(output_file).writerows([[cell_value for cell_value in row] for row in rows])
                 print(f'Successfully saved converted data to "{path2export}".')
     print(f'Converted {Workbook.__name__}s to CSVs!')
 
