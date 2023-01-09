@@ -25,7 +25,6 @@ placed in a directory called "Exports".
 
 from argparse import ArgumentParser
 from csv import writer
-from os.path import isdir
 from pathlib import Path
 from typing import Final
 
@@ -77,7 +76,7 @@ def _get_workbooks_map(input_path: Path) -> dict[Path, Workbook]:
     if str(input_path).endswith(WORKBOOK_EXTENSION):
         print(f'Found input {Workbook.__name__} "{input_path}".')
         return {input_path: _load_workbook(input_path)}
-    if isdir(input_path):
+    if input_path.is_dir():
         print(f'Found input directory "{input_path}".')
         workbooks_map = _load_workbooks(input_path)
         if not workbooks_map:
