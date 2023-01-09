@@ -174,12 +174,12 @@ def parse_arguments() -> tuple[Path, Path]:
     :return: the input and output paths in that order.
     """
     parser = ArgumentParser()
-    parser.add_argument('-input_path', type=str, required=True,
+    parser.add_argument('--input_path', type=str, required=True,
                         help=f'The path to the {Workbook.__name__} or to a directory containing {Workbook.__name__}s.')
-    parser.add_argument('-output_path', type=str, required=False, default=EXPORT_ROOT_DIR, help='The path to the '
-                                                                                                'directory that will '
-                                                                                                'contain all the '
-                                                                                                'exported CSV files.')
+    parser.add_argument('--output_path', type=str, required=False, default=EXPORT_ROOT_DIR, help='The path to the '
+                                                                                                 'directory that will '
+                                                                                                 'contain all the '
+                                                                                                 'exported CSV files.')
     args = parser.parse_args()
     input_path = Path(args.input_path)
     output_path = Path(args.output_path if args.output_path else EXPORT_ROOT_DIR)
