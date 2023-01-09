@@ -148,9 +148,9 @@ def _workbooks2csv(workbooks_map: dict[Path, Workbook], input_path: Path, output
         workbook_export_path = Path(output_path, relative_workbook_path_without_extension)
         workbook_export_path.mkdir(parents=True, exist_ok=True)
         for ws in wb:
-            path2export = Path(workbook_export_path, ws.title + '.csv')
+            path2export = Path(workbook_export_path, ws.title.strip() + '.csv')
             if not _should_write_data(path2export):
-                print(f'No data was written for {Worksheet.__name__} "{ws.title}".')
+                print(f'No data was written for {Worksheet.__name__} "{ws.title.strip()}".')
                 continue
             with open(path2export, 'w', encoding='utf-8', newline='') as output_file:
                 rows = _remove_empty_rows(_remove_empty_columns(ws))
