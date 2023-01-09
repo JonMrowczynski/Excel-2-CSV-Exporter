@@ -1,7 +1,7 @@
 .idea/*
 __pycache__/*
 build/*
-excel_2_csv_converter.spec
+*.spec
 .idea/dictionaries/sleep.xml
 /Exports/
 /build/
