@@ -14,10 +14,12 @@ called "Exports", which is placed in the same directory as the executed Python s
 ## How 2 use Script?
 You can either...
 
-1. Run the Python script: `python -m excel_2_csv_converter -path "path/2/workbook/or/directory"`
+1. 
+   1. Create a venv.
+   2. Install all requirements to run by entering the command `pip install -r ./requirements/run.txt`.
+   3. Run the Python script: `python -m excel_2_csv_converter -path "path/2/workbook/or/directory"`.
 
-
-2. Run the executable: `.\excel_2_csv_converter.exe -path "path/2/workbook/or/directory"`
+2. Run the pre-built executable: `.\excel_2_csv_converter.exe -path "path/2/workbook/or/directory"`
 
 Where `"path/2/workbook/or/directory"` can be an absolute path or a path relative to the Python script or executable. 
 Either way, it must point to an Excel Workbook (a file with an ".xlsx" extension) or a directory containing one or more 
@@ -30,11 +32,10 @@ However, this is not done here.
 ## How 2 Develop?
 You will need:
 
-- [PyCharm IDE](https://www.jetbrains.com/pycharm/download/) >= 2022.1 (recommended, but not necessary).
+- [PyCharm IDE](https://www.jetbrains.com/pycharm/download/) >= 2023.3.2 (recommended, but not necessary).
 
-- [Python](https://www.python.org/downloads/) >= 3.10.
+- [Python](https://www.python.org/downloads/) >= 3.12.1.
 
-- [openpyxl](https://openpyxl.readthedocs.io/en/stable/) >= 3.0.9 to read Excel Workbooks.
+- Run `pip install -r ./requirements/deploy.txt` if you would like to build executables.
 
-- [PyInstaller](https://pyinstaller.readthedocs.io/en/stable/) >= 4.10 to build executable.
-  - [UPX](https://upx.github.io/) >= 3.96 if you would like to make smaller executables.
+- [UPX](https://upx.github.io/) >= 4.2.2 if you would like to make smaller executables on windows.
